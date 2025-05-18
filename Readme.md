@@ -41,14 +41,14 @@ Das Projekt basiert auf dem 1989 (meine Ausgabe ist von 1994, Nr. 003587) im Rav
 Dort wird es für 1-6 Kinder in der Altersklasse von 7-12 Jahren empfohlen.
 
 Das Ursprungsspiel wird auf einem 7x7 Feld mit folgender Zahlenverteilung gespielt. Die Verteilung wurde bei dieser digitalen Version übernommen und für die anderen Feldgrößen entsprechend angepasst.
-1: 5 mal
-2: 6 mal
-3: 6 mal
-4: 6 mal
-5: 6 mal
-6: 6 mal
-7: 5 mal
-8: 5 mal
+1: 5 mal,
+2: 6 mal,
+3: 6 mal,
+4: 6 mal,
+5: 6 mal,
+6: 6 mal,
+7: 5 mal,
+8: 5 mal,
 9: 4 mal
 
 Die Zielzahlen befinden sich zwischen 1 und 50.
