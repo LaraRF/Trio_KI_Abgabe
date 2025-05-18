@@ -53,9 +53,21 @@ public:
     void incrementAIScore();
 
     int maxRounds;
+
+    float getCurrentTime() const;  // Gibt die aktuelle Gesamtzeit zurück (inkl. laufende Runde)
+    float getAverageTime() const;  // Gibt die Durchschnittszeit pro gewonnener Runde zurück
+    float getPlayerAverageTime() const;  // Nur vom Spieler gewonnene Runden
+    float getAIAverageTime() const;     // Nur von der KI gewonnene Runden
+
+    void startRound();  // Startet eine neue Runde mit Zeitmessung
+    void recordRoundTime(bool playerWon);  // Zeichnet die Zeit für die aktuelle Runde auf
+    int rounds;
+
+    void pauseTimer();   // Pausiert den Timer für die aktuelle Runde
+    void resumeTimer();  // Setzt den Timer fort
+    bool timerPaused;
 private:
     int targetNumber;
-    int rounds;
     std::vector<CellPosition> selectedCells;
     bool gameWon;
     bool roundWon;
@@ -67,6 +79,10 @@ private:
     std::vector<int> usedTargetNumbers;
     int playerScore;
     int aiScore;
+    std::vector<float> playerRoundTimes;  // Zeiten für vom Spieler gewonnene Runden
+    std::vector<float> aiRoundTimes;      // Zeiten für von der KI gewonnene Runden
+    std::chrono::time_point<std::chrono::steady_clock> gameStartTime;  // Startzeit des gesamten Spiels
+    std::chrono::time_point<std::chrono::steady_clock> pauseStartTime;
 };
 
 #endif //RAYLIBSTARTER_GAMESTATE_H

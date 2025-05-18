@@ -33,20 +33,30 @@ void GameRenderer::drawGameInfo(const GameState& gameState) const {
     sprintf(targetInfo, "Zielzahl: %d", gameState.getTargetNumber());
     DrawText(targetInfo, 10, 40, 30, RED);
 
-    // Zeit anzeigen
-    float currentTime = gameState.getTotalTime();
-
+    // Gesamtzeit anzeigen (laufend)
+    float currentTime = gameState.getCurrentTime();
     char timeInfo[100];
-    sprintf(timeInfo, "Zeit: %.1f Sekunden", currentTime);
+    sprintf(timeInfo, "Gesamtzeit: %.1f Sekunden", currentTime);
     DrawText(timeInfo, 10, 80, 20, BLACK);
 
     // Durchschnittszeit pro Runde anzeigen
     char avgTimeInfo[100];
-    float avgTime = 0;
-    if (gameState.getRounds() > 0) {
-        avgTime = currentTime / gameState.getRounds();
+    if (gameState.getPlayerScore() > 0 || gameState.getAIScore() > 0) {
+        // Wenn im Versus-Modus, zeige separate Durchschnittszeiten
+        if (gameState.getPlayerScore() > 0 && gameState.getAIScore() > 0) {
+            sprintf(avgTimeInfo, "Durchschnittszeiten - Spieler: %.1f s  KI: %.1f s",
+                    gameState.getPlayerAverageTime(), gameState.getAIAverageTime());
+        } else if (gameState.getPlayerScore() > 0) {
+            sprintf(avgTimeInfo, "Durchschnittszeit Spieler: %.1f Sekunden",
+                    gameState.getPlayerAverageTime());
+        } else {
+            sprintf(avgTimeInfo, "Durchschnittszeit KI: %.1f Sekunden",
+                    gameState.getAIAverageTime());
+        }
+    } else {
+        // Im Solomodus oder wenn noch keine Runde gewonnen wurde
+        sprintf(avgTimeInfo, "Durchschnittszeit: %.1f Sekunden", gameState.getAverageTime());
     }
-    sprintf(avgTimeInfo, "Durchschnittszeit: %.1f Sekunden", avgTime);
     DrawText(avgTimeInfo, 10, 110, 20, BLACK);
 
     // Falsche Versuche anzeigen
@@ -71,60 +81,7 @@ void GameRenderer::drawCorrectMessage() const {
              fontSize, GREEN);
 }
 
-void GameRenderer::drawGameOverScreen(const GameState& gameState) const {
-    DrawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, ColorAlpha(BLACK, 0.7f));
-
-    const char* gameOverText = "TrioGame Over - Du hast gewonnen!";
-    int textWidth = MeasureText(gameOverText, 40);
-
-    DrawText(gameOverText,
-             (SCREEN_WIDTH - textWidth) / 2,
-             SCREEN_HEIGHT / 2 - 100,
-             40, WHITE);
-
-    // Statistik anzeigen
-    char timeInfo[100];
-    sprintf(timeInfo, "Gesamtzeit: %.1f Sekunden", gameState.getTotalTime());
-    int timeWidth = MeasureText(timeInfo, 20);
-    DrawText(timeInfo,
-             (SCREEN_WIDTH - timeWidth) / 2,
-             SCREEN_HEIGHT / 2 - 40,
-             20, WHITE);
-
-    // Durchschnittszeit pro Runde anzeigen
-    char avgTimeInfo[100];
-    float avgTime = gameState.getMaxRounds() > 0 ? gameState.getTotalTime() / gameState.getMaxRounds() : 0;
-    sprintf(avgTimeInfo, "Durchschnittszeit: %.1f Sekunden", avgTime);
-    int avgTimeWidth = MeasureText(avgTimeInfo, 20);
-    DrawText(avgTimeInfo,
-             (SCREEN_WIDTH - avgTimeWidth) / 2,
-             SCREEN_HEIGHT / 2 - 10,
-             20, WHITE);
-
-    char attemptsInfo[100];
-    sprintf(attemptsInfo, "Falsche Versuche: %d", gameState.getWrongAttempts());
-    int attemptsWidth = MeasureText(attemptsInfo, 20);
-    DrawText(attemptsInfo,
-             (SCREEN_WIDTH - attemptsWidth) / 2,
-             SCREEN_HEIGHT / 2 + 20,
-             20, WHITE);
-
-    char hintsInfo[100];
-    sprintf(hintsInfo, "Benutzte Hinweise: %d", gameState.getHintsUsed());
-    int hintsWidth = MeasureText(hintsInfo, 20);
-    DrawText(hintsInfo,
-             (SCREEN_WIDTH - hintsWidth) / 2,
-             SCREEN_HEIGHT / 2 + 50,
-             20, WHITE);
-
-    const char* continueText = "Klicke, um zum Hauptmenü zurückzukehren";
-    int continueWidth = MeasureText(continueText, 20);
-
-    DrawText(continueText,
-             (SCREEN_WIDTH - continueWidth) / 2,
-             SCREEN_HEIGHT / 2 + 90,
-             20, WHITE);
-}
+//void GameRenderer::drawGameOverScreen(const GameState& gameState) const {}
 
 void GameRenderer::drawMainMenu(const std::vector<ButtonPtr>& buttons) const {
     DrawText("Wähle die Größe des Spielfelds",

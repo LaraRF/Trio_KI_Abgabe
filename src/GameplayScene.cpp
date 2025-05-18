@@ -87,20 +87,30 @@ void GameplayScene::update(float deltaTime) {
         button->update(deltaTime);
     }
 
-    // Wenn gegen KI gespielt wird, aktualisiere die KI
+    // Wenn gegen KI gespielt wird, aktualisiere die KI (nur wenn keine Runde gerade gewonnen wurde)
     if (gameOptions.mode == GameMode::VERSUS_AI && !gameState.isRoundWon()) {
         processAIMove(deltaTime);
     }
 
     // Wenn eine Runde gewonnen wurde und der Timer abgelaufen ist, starte eine neue Runde
     if (gameState.isRoundWon() && gameState.getRoundWonTimer() <= 0.0f && !gameState.isGameWon()) {
+        // Erhöhe den Rundenzähler erst jetzt, wenn die Runde wirklich vorbei ist
+        gameState.rounds++;
+
         if (gameOptions.mode == GameMode::VERSUS_AI) {
             // Lasse die KI aus der Spielerzeit lernen
-            float playerSolveTime = gameState.getTotalTime() / std::max(1, gameState.getRounds());
+            float playerSolveTime = gameState.getPlayerAverageTime();
             ai.learnFromPlayerMove(playerSolveTime, gameState.getWrongAttempts(), gameState.getHintsUsed());
         }
 
-        gameState.startNewRound();
+        // Setze den Timer fort, wenn eine neue Runde beginnt
+        gameState.resumeTimer();
+
+        // Starte eine neue Runde mit Zeitmessung
+        gameState.startRound();
+
+        // Starte eine neue Runde mit Zeitmessung
+        gameState.startRound();
 
         // Alle Zellen zurücksetzen
         for (int row = 0; row < board->getSize(); row++) {
@@ -118,6 +128,11 @@ void GameplayScene::update(float deltaTime) {
         currentAssistantHint = "";
 
         generateTargetNumber();
+    }
+
+    // Wenn das Spiel gewonnen ist, pausiere den Timer
+    if (gameState.isGameWon() && !gameState.timerPaused) {
+        gameState.pauseTimer();
     }
 
     // Prozessiere Benutzereingaben
@@ -252,14 +267,24 @@ void GameplayScene::processClick(int row, int col) {
         board->getCell(row, col)->setSelected(false);
     } else {
         // Prüfe, ob die neue Zelle ausgewählt werden kann
-        if (gameState.getSelectedCells().empty() ||
-            board->getValidNextCells(gameState.getSelectedCells()).end() !=
-            std::find_if(board->getValidNextCells(gameState.getSelectedCells()).begin(),
-                         board->getValidNextCells(gameState.getSelectedCells()).end(),
-                         [&clickedCell](const CellPosition& pos) {
-                             return pos.row == clickedCell.row && pos.col == clickedCell.col;
-                         })) {
+        bool canSelect = false;
 
+        if (gameState.getSelectedCells().empty()) {
+            // Erste Zelle kann immer ausgewählt werden
+            canSelect = true;
+        } else {
+            // Prüfe, ob die neue Zelle eine gültige nächste Zelle ist
+            std::vector<CellPosition> validNextCells = board->getValidNextCells(gameState.getSelectedCells());
+
+            for (const auto& validCell : validNextCells) {
+                if (validCell.row == row && validCell.col == col) {
+                    canSelect = true;
+                    break;
+                }
+            }
+        }
+
+        if (canSelect) {
             // Zelle hinzufügen
             gameState.addSelectedCell(clickedCell);
             board->getCell(row, col)->setSelected(true);
@@ -268,6 +293,15 @@ void GameplayScene::processClick(int row, int col) {
             if (gameState.getSelectedCells().size() == 3) {
                 if (board->isValidSelection(gameState.getSelectedCells()) &&
                     board->checkWinCondition(gameState.getSelectedCells(), gameState.getTargetNumber())) {
+
+                    // Zeichne die Zeit für diese Runde auf (Spieler hat gewonnen)
+                    gameState.recordRoundTime(true);
+
+                    // Punkte für den Spieler erhöhen (nur im Versus-Modus)
+                    if (gameOptions.mode == GameMode::VERSUS_AI) {
+                        gameState.incrementPlayerScore();
+                    }
+
                     // Runde gewonnen
                     gameState.winRound();
                 } else {
@@ -279,22 +313,6 @@ void GameplayScene::processClick(int row, int col) {
                     gameState.incrementWrongAttempts();
                 }
             }
-        }
-    }
-    // Wenn der Spieler eine gültige Lösung findet
-    if (gameState.getSelectedCells().size() == 3) {
-        if (board->isValidSelection(gameState.getSelectedCells()) &&
-            board->checkWinCondition(gameState.getSelectedCells(), gameState.getTargetNumber())) {
-
-            // Punkte für den Spieler erhöhen (nur im Versus-Modus)
-            if (gameOptions.mode == GameMode::VERSUS_AI) {
-                gameState.incrementPlayerScore();
-            }
-
-            // Runde gewonnen
-            gameState.winRound();
-        } else {
-            // Bestehender Code für ungültige Kombination...
         }
     }
 }
@@ -309,7 +327,16 @@ void GameplayScene::processAIMove(float deltaTime) {
         std::vector<CellPosition> solution = ai.findSolution(board, gameState.getTargetNumber());
 
         if (!solution.empty()) {
-            // KI hat eine Lösung gefunden und gewinnt die Runde
+
+            // Zeichne die Zeit für diese Runde auf (KI hat gewonnen)
+            gameState.recordRoundTime(false);
+
+            // Punkte für die KI erhöhen
+            gameState.incrementAIScore();
+
+            // KI gewinnt diese Runde
+            gameState.winRound();
+
             for (const auto& cell : solution) {
                 gameState.addSelectedCell(cell);
                 board->getCell(cell.row, cell.col)->setSelected(true);

@@ -20,6 +20,11 @@ void GameState::initialize() {
     roundStartTime = std::chrono::steady_clock::now();
     playerScore = 0;
     aiScore = 0;
+    playerRoundTimes.clear();
+    aiRoundTimes.clear();
+    gameStartTime = std::chrono::steady_clock::now();
+    roundStartTime = gameStartTime;
+    timerPaused = false;
 }
 
 void GameState::update(float deltaTime) {
@@ -123,16 +128,25 @@ void GameState::startNewRound() {
 
 void GameState::winRound() {
     auto now = std::chrono::steady_clock::now();
-    std::chrono::duration<float> elapsed = now - roundStartTime;
+    std::chrono::duration<float> elapsed;
+
+    if (timerPaused) {
+        // Wenn der Timer pausiert ist, berechne die Zeit bis zur Pause
+        elapsed = pauseStartTime - roundStartTime;
+    } else {
+        elapsed = now - roundStartTime;
+    }
+
     totalTime += elapsed.count();
 
     roundWon = true;
     roundWonTimer = 2.0f; // 2 Sekunden anzeigen
 
-    rounds++;
+    // Pausiere den Timer während "Richtig!" angezeigt wird
+    pauseTimer();
 
-    // Spiel ist zu Ende, wenn die maximale Rundenanzahl erreicht ist
-    if (rounds >= maxRounds) {
+    // Überprüfe, ob wir die maximale Rundenanzahl erreicht haben
+    if (rounds + 1 >= maxRounds) {
         gameWon = true;
     }
 }
@@ -159,4 +173,101 @@ void GameState::incrementPlayerScore() {
 
 void GameState::incrementAIScore() {
     aiScore++;
+}
+
+float GameState::getCurrentTime() const {
+    if (gameWon) {
+        // Wenn das Spiel gewonnen ist, gib die endgültige Gesamtzeit zurück
+        return totalTime;
+    }
+
+    auto now = std::chrono::steady_clock::now();
+    std::chrono::duration<float> totalElapsed = now - gameStartTime;
+
+    if (timerPaused) {
+        // Wenn der Timer pausiert ist, ziehe die Pausenzeit ab
+        std::chrono::duration<float> pauseTime = now - pauseStartTime;
+        return totalElapsed.count() - pauseTime.count();
+    }
+
+    return totalElapsed.count();
+}
+
+float GameState::getAverageTime() const {
+    if (playerRoundTimes.empty() && aiRoundTimes.empty()) {
+        return 0.0f;
+    }
+
+    float totalTime = 0.0f;
+    for (float time : playerRoundTimes) {
+        totalTime += time;
+    }
+    for (float time : aiRoundTimes) {
+        totalTime += time;
+    }
+
+    return totalTime / (playerRoundTimes.size() + aiRoundTimes.size());
+}
+
+float GameState::getPlayerAverageTime() const {
+    if (playerRoundTimes.empty()) {
+        return 0.0f;
+    }
+
+    float totalTime = 0.0f;
+    for (float time : playerRoundTimes) {
+        totalTime += time;
+    }
+
+    return totalTime / playerRoundTimes.size();
+}
+
+float GameState::getAIAverageTime() const {
+    if (aiRoundTimes.empty()) {
+        return 0.0f;
+    }
+
+    float totalTime = 0.0f;
+    for (float time : aiRoundTimes) {
+        totalTime += time;
+    }
+
+    return totalTime / aiRoundTimes.size();
+}
+
+void GameState::startRound() {
+    roundStartTime = std::chrono::steady_clock::now();
+    selectedCells.clear();
+    roundWon = false;
+}
+
+void GameState::recordRoundTime(bool playerWon) {
+    auto now = std::chrono::steady_clock::now();
+    std::chrono::duration<float> elapsed = now - roundStartTime;
+    float roundTime = elapsed.count();
+
+    if (playerWon) {
+        playerRoundTimes.push_back(roundTime);
+    } else {
+        aiRoundTimes.push_back(roundTime);
+    }
+}
+
+void GameState::pauseTimer() {
+    if (!timerPaused) {
+        timerPaused = true;
+        pauseStartTime = std::chrono::steady_clock::now();
+    }
+}
+
+void GameState::resumeTimer() {
+    if (timerPaused) {
+        auto now = std::chrono::steady_clock::now();
+        std::chrono::duration<long long int, std::ratio<1, 1000000000>> pauseDuration = now - pauseStartTime;
+
+        // Verschiebe den Rundenstartzeitpunkt um die Pausendauer nach hinten
+        roundStartTime += pauseDuration;
+
+        timerPaused = false;
+    }
 }
