@@ -68,7 +68,7 @@ void GameplayScene::initialize() {
     };
 
     ButtonPtr hintButton = std::make_shared<Button>("Hinweis", hintButtonCallback);
-    hintButton->setPosition(SCREEN_WIDTH - 120 - 20, 20 + 40 + 10);
+    hintButton->setPosition(SCREEN_WIDTH - 120 - 20, 20 + 40 + 100);
     hintButton->setSize(120, 40);
     buttons.push_back(hintButton);
 
@@ -169,6 +169,22 @@ void GameplayScene::update(float deltaTime) {
             float playerSolveTime = gameState.getTotalTime() / std::max(1, gameState.getRounds());
             ai.learnFromPlayerMove(playerSolveTime, gameState.getWrongAttempts(), gameState.getHintsUsed());
         }
+    }
+
+    if (gameState.isGameWon()) {
+        // Wenn das Spiel zu Ende ist, aber die aktuelle Runde nicht gewonnen wurde,
+        // zeichne die bisherige Zeit für den Spieler auf
+        if (!gameState.isRoundWon()) {
+            auto now = std::chrono::steady_clock::now();
+            std::chrono::duration<float> elapsed = now - gameState.roundStartTime;
+            float roundTime = elapsed.count();
+
+            // Zeit für den Spieler aufzeichnen (da KI nicht schneller war)
+            gameState.recordRoundTimeForPlayer(roundTime);
+        }
+
+        nextScene = SceneType::GAME_OVER;
+        sceneFinished = true;
     }
 
     // Prüfe, ob das Spiel gewonnen wurde
@@ -294,8 +310,13 @@ void GameplayScene::processClick(int row, int col) {
                 if (board->isValidSelection(gameState.getSelectedCells()) &&
                     board->checkWinCondition(gameState.getSelectedCells(), gameState.getTargetNumber())) {
 
-                    // Zeichne die Zeit für diese Runde auf (Spieler hat gewonnen)
-                    gameState.recordRoundTime(true);
+                    // Zeit für diese Runde berechnen
+                    auto now = std::chrono::steady_clock::now();
+                    std::chrono::duration<float> elapsed = now - gameState.roundStartTime;
+                    float roundTime = elapsed.count();
+
+                    // Zeit für den Spieler aufzeichnen
+                    gameState.recordRoundTimeForPlayer(roundTime);
 
                     // Punkte für den Spieler erhöhen (nur im Versus-Modus)
                     if (gameOptions.mode == GameMode::VERSUS_AI) {
@@ -346,8 +367,13 @@ void GameplayScene::processAIMove(float deltaTime) {
                 }
             }
 
-            // Zeichne die Zeit für diese Runde auf (KI hat gewonnen)
-            gameState.recordRoundTime(false);
+            // Zeit für diese Runde berechnen
+            auto now = std::chrono::steady_clock::now();
+            std::chrono::duration<float> elapsed = now - gameState.roundStartTime;
+            float roundTime = elapsed.count();
+
+            // Zeit für die KI aufzeichnen
+            gameState.recordRoundTimeForAI(roundTime);
 
             // Punkte für die KI erhöhen
             gameState.incrementAIScore();

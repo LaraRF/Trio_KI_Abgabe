@@ -70,45 +70,33 @@ void GameOverScene::draw() const {
     // Durchschnittszeiten anzeigen
     int yPos = SCREEN_HEIGHT / 2 - 10;
 
-    if (isVersusMode) {
-        // Im Versus-Modus separate Durchschnittszeiten für Spieler und KI
-        if (gameState.getPlayerScore() > 0) {
-            char playerAvgTimeInfo[100];
-            sprintf(playerAvgTimeInfo, "Durchschnittszeit Spieler: %.1f Sekunden",
-                    gameState.getPlayerAverageTime());
-            int playerAvgTimeWidth = MeasureText(playerAvgTimeInfo, 20);
-
-            DrawText(playerAvgTimeInfo,
-                     (SCREEN_WIDTH - playerAvgTimeWidth) / 2,
-                     yPos,
-                     20, WHITE);
-            yPos += 30;
-        }
-
-        if (gameState.getAIScore() > 0) {
-            char aiAvgTimeInfo[100];
-            sprintf(aiAvgTimeInfo, "Durchschnittszeit KI: %.1f Sekunden",
-                    gameState.getAIAverageTime());
-            int aiAvgTimeWidth = MeasureText(aiAvgTimeInfo, 20);
-
-            DrawText(aiAvgTimeInfo,
-                     (SCREEN_WIDTH - aiAvgTimeWidth) / 2,
-                     yPos,
-                     20, WHITE);
-            yPos += 30;
-        }
-    } else {
-        // Im Solomodus eine Gesamtdurchschnittszeit
-        char avgTimeInfo[100];
-        sprintf(avgTimeInfo, "Durchschnittszeit pro Runde: %.1f Sekunden",
-                gameState.getAverageTime());
+    char avgTimeInfo[100];
+    if (gameState.getPlayerScore() > 0 || gameState.getAIScore() > 0) {
+        // Im Versus-Modus separate Durchschnittszeiten
+        sprintf(avgTimeInfo, "Durchschnittszeit - Spieler: %.1f s",
+                gameState.getPlayerAverageTime());
         int avgTimeWidth = MeasureText(avgTimeInfo, 20);
-
         DrawText(avgTimeInfo,
                  (SCREEN_WIDTH - avgTimeWidth) / 2,
-                 yPos,
+                 (SCREEN_HEIGHT / 2 - 10)+50,
                  20, WHITE);
-        yPos += 30;
+
+        sprintf(avgTimeInfo, "Durchschnittszeit - KI: %.1f s",
+                gameState.getAIAverageTime());
+        avgTimeWidth = MeasureText(avgTimeInfo, 20);
+        DrawText(avgTimeInfo,
+                 (SCREEN_WIDTH - avgTimeWidth) / 2,
+                 (SCREEN_HEIGHT / 2 + 20)+60,
+                 20, WHITE);
+    } else {
+        // Im Solomodus eine Gesamtdurchschnittszeit
+        sprintf(avgTimeInfo, "Durchschnittszeit: %.1f Sekunden",
+                gameState.getPlayerAverageTime());
+        int avgTimeWidth = MeasureText(avgTimeInfo, 20);
+        DrawText(avgTimeInfo,
+                 (SCREEN_WIDTH - avgTimeWidth) / 2,
+                 SCREEN_HEIGHT / 2 + 60,
+                 20, WHITE);
     }
 
     // Falsche Versuche anzeigen

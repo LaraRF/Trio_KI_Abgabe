@@ -39,23 +39,16 @@ void GameRenderer::drawGameInfo(const GameState& gameState) const {
     sprintf(timeInfo, "Gesamtzeit: %.1f Sekunden", currentTime);
     DrawText(timeInfo, 10, 80, 20, BLACK);
 
-    // Durchschnittszeit pro Runde anzeigen
+    // Durchschnittszeit anzeigen
     char avgTimeInfo[100];
     if (gameState.getPlayerScore() > 0 || gameState.getAIScore() > 0) {
-        // Wenn im Versus-Modus, zeige separate Durchschnittszeiten
-        if (gameState.getPlayerScore() > 0 && gameState.getAIScore() > 0) {
-            sprintf(avgTimeInfo, "Durchschnittszeiten - Spieler: %.1f s  KI: %.1f s",
-                    gameState.getPlayerAverageTime(), gameState.getAIAverageTime());
-        } else if (gameState.getPlayerScore() > 0) {
-            sprintf(avgTimeInfo, "Durchschnittszeit Spieler: %.1f Sekunden",
-                    gameState.getPlayerAverageTime());
-        } else {
-            sprintf(avgTimeInfo, "Durchschnittszeit KI: %.1f Sekunden",
-                    gameState.getAIAverageTime());
-        }
+        // Im Versus-Modus separate Durchschnittszeiten
+        sprintf(avgTimeInfo, "Durchschnittszeiten - Spieler: %.1f s - KI: %.1f s",
+                gameState.getPlayerAverageTime(), gameState.getAIAverageTime());
     } else {
-        // Im Solomodus oder wenn noch keine Runde gewonnen wurde
-        sprintf(avgTimeInfo, "Durchschnittszeit: %.1f Sekunden", gameState.getAverageTime());
+        // Im Solomodus eine Gesamtdurchschnittszeit
+        sprintf(avgTimeInfo, "Durchschnittszeit: %.1f Sekunden",
+                gameState.getPlayerAverageTime());
     }
     DrawText(avgTimeInfo, 10, 110, 20, BLACK);
 

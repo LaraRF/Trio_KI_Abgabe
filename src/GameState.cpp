@@ -25,6 +25,8 @@ void GameState::initialize() {
     gameStartTime = std::chrono::steady_clock::now();
     roundStartTime = gameStartTime;
     timerPaused = false;
+    playerRoundTimes.clear();
+    aiRoundTimes.clear();
 }
 
 void GameState::update(float deltaTime) {
@@ -270,4 +272,12 @@ void GameState::resumeTimer() {
 
         timerPaused = false;
     }
+}
+
+void GameState::recordRoundTimeForPlayer(float time) {
+    playerRoundTimes.push_back(time);
+}
+
+void GameState::recordRoundTimeForAI(float time) {
+    aiRoundTimes.push_back(time);
 }
