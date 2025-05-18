@@ -5,8 +5,8 @@
 #include "GameTypes.h"
 
 // Fenster-Konstanten
-const int SCREEN_WIDTH = 800;
-const int SCREEN_HEIGHT = 600;
+const int SCREEN_WIDTH = 1920;
+const int SCREEN_HEIGHT = 1200;
 const char* WINDOW_TITLE = "Trio - Zahlenspiel";
 
 // Farbkonstanten
