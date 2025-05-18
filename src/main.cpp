@@ -22,7 +22,7 @@ int main() {
     // Your own initialization code here
 
     //Texture2D myTexture = LoadTexture("assets/graphics/testimage.png");
-    RenderTexture2D canvas = LoadRenderTexture(Game::ScreenWidth, Game::ScreenHeight);
+    RenderTexture2D canvas = LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT);
     float renderScale{}; // this and the line below are relevant to drawing later.
     Rectangle renderRec{};
 

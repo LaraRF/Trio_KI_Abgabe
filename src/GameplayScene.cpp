@@ -109,9 +109,6 @@ void GameplayScene::update(float deltaTime) {
         // Starte eine neue Runde mit Zeitmessung
         gameState.startRound();
 
-        // Starte eine neue Runde mit Zeitmessung
-        gameState.startRound();
-
         // Alle Zellen zurücksetzen
         for (int row = 0; row < board->getSize(); row++) {
             for (int col = 0; col < board->getSize(); col++) {
