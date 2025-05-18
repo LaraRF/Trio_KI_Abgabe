@@ -88,7 +88,7 @@ void GameplayScene::update(float deltaTime) {
     }
 
     // Wenn gegen KI gespielt wird, aktualisiere die KI (nur wenn keine Runde gerade gewonnen wurde)
-    if (gameOptions.mode == GameMode::VERSUS_AI && !gameState.isRoundWon()) {
+    if (gameOptions.mode == GameMode::VERSUS_AI && !gameState.isRoundWon() && !gameState.isGameWon()) {
         processAIMove(deltaTime);
     }
 
@@ -319,6 +319,8 @@ void GameplayScene::processClick(int row, int col) {
 
 // Neue Methoden für KI und Assistent
 void GameplayScene::processAIMove(float deltaTime) {
+    // Wenn die KI bereits gewonnen hat, nichts tun
+    if (gameState.isRoundWon()) return;
     ai.update(deltaTime, gameState);
 
     // Wenn die KI bereit ist, einen Zug zu machen
@@ -328,19 +330,24 @@ void GameplayScene::processAIMove(float deltaTime) {
 
         if (!solution.empty()) {
 
+            // Sicherstellen, dass die aktuelle Runde nicht bereits gewonnen wurde
+            // (könnte passieren, wenn der Spieler genau vor der KI gewonnen hat)
+            if (!gameState.isRoundWon()) {
+                // Aktuelle Auswahl zurücksetzen
+                for (const auto &cell: gameState.getSelectedCells()) {
+                    board->getCell(cell.row, cell.col)->setSelected(false);
+                }
+                gameState.clearSelectedCells();
+
+                // KI hat eine Lösung gefunden
+                for (const auto &cell: solution) {
+                    gameState.addSelectedCell(cell);
+                    board->getCell(cell.row, cell.col)->setSelected(true);
+                }
+            }
+
             // Zeichne die Zeit für diese Runde auf (KI hat gewonnen)
             gameState.recordRoundTime(false);
-
-            // Punkte für die KI erhöhen
-            gameState.incrementAIScore();
-
-            // KI gewinnt diese Runde
-            gameState.winRound();
-
-            for (const auto& cell : solution) {
-                gameState.addSelectedCell(cell);
-                board->getCell(cell.row, cell.col)->setSelected(true);
-            }
 
             // Punkte für die KI erhöhen
             gameState.incrementAIScore();
