@@ -12,10 +12,12 @@
 #include "GameRenderer.h"
 #include "GameSolver.h"
 #include "Button.h"
+#include "NeuralNetworkAI.h"
+#include "GameAssistant.h"
 
 class GameplayScene : public Scene {
 public:
-    GameplayScene(int boardSize);
+    GameplayScene(int boardSize, const GameOptions& options);
 
     void initialize() override;
     void update(float deltaTime) override;
@@ -36,6 +38,17 @@ private:
 
     void generateTargetNumber();
     void processClick(int row, int col);
+
+    GameOptions gameOptions;
+    NeuralNetworkAI ai;
+    GameAssistant assistant;
+    int hintLevel;
+    std::string currentAssistantHint;
+    bool showAssistantHint;
+    float aiPlayTimer;
+
+    void processAIMove(float deltaTime);
+    void showAssistantMessage(int level);
 };
 
 #endif //RAYLIBSTARTER_GAMEPLAYSCENE_H

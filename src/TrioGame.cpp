@@ -43,21 +43,53 @@ void TrioGame::run() {
 }
 
 void TrioGame::changeScene(SceneType sceneType) {
+    GameOptions currentOptions;
+    int selectedBoardSize = 7; // Standardgröße
+
+    // Speichere aktuelle Werte und Optionen, falls vorhanden
+    auto mainMenuScene = std::dynamic_pointer_cast<MainMenuScene>(currentScene);
+    if (mainMenuScene) {
+        currentOptions = mainMenuScene->getGameOptions();
+        selectedBoardSize = mainMenuScene->getSelectedBoardSize();
+    }
+
+    auto optionsScene = std::dynamic_pointer_cast<OptionsScene>(currentScene);
+    if (optionsScene) {
+        currentOptions = optionsScene->getOptions();
+    }
+
+    // Erstelle neue Szene basierend auf dem gewünschten Typ
     switch (sceneType) {
         case SceneType::MAIN_MENU:
-            currentScene = std::make_shared<MainMenuScene>();
+        {
+            auto newMainMenu = std::make_shared<MainMenuScene>();
+
+            // Übertrage die aktuellen Optionen vom Optionsmenü
+            if (optionsScene) {
+                newMainMenu->setGameOptions(currentOptions);
+            }
+                // Oder behalte die vorherigen Optionen bei
+            else if (mainMenuScene) {
+                newMainMenu->setGameOptions(currentOptions);
+            }
+
+            currentScene = newMainMenu;
+        }
+            break;
+
+        case SceneType::OPTIONS:
+            currentScene = std::make_shared<OptionsScene>(currentOptions);
             break;
 
         case SceneType::GAMEPLAY:
         {
-            auto mainMenuScene = std::dynamic_pointer_cast<MainMenuScene>(currentScene);
+            // Wenn wir vom Hauptmenü kommen, hole die Spielfeldgröße und Optionen von dort
             if (mainMenuScene) {
-                int boardSize = mainMenuScene->getSelectedBoardSize();
-                currentScene = std::make_shared<GameplayScene>(boardSize);
-            } else {
-                // Fallback: Verwende Standardgröße
-                currentScene = std::make_shared<GameplayScene>(7);
+                selectedBoardSize = mainMenuScene->getSelectedBoardSize();
+                currentOptions = mainMenuScene->getGameOptions();
             }
+
+            currentScene = std::make_shared<GameplayScene>(selectedBoardSize, currentOptions);
         }
             break;
 
@@ -67,7 +99,7 @@ void TrioGame::changeScene(SceneType sceneType) {
             if (gameplayScene) {
                 currentScene = std::make_shared<GameOverScene>(gameplayScene->getGameState());
             } else {
-                // Fallback: Erstelle TrioGame-Over-Szene mit leerem GameState
+                // Fallback: Erstelle Game-Over-Szene mit leerem GameState
                 GameState emptyState;
                 currentScene = std::make_shared<GameOverScene>(emptyState);
             }

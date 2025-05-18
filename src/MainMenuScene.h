@@ -23,9 +23,13 @@ public:
 
     int getSelectedBoardSize() const;
 
+    void setGameOptions(const GameOptions& options);
+    GameOptions getGameOptions() const;
+
 private:
     std::vector<ButtonPtr> buttons;
     GameRenderer renderer;
     int selectedBoardSize;
+    GameOptions gameOptions;
 };
 #endif //RAYLIBSTARTER_MAINMENUSCENE_H

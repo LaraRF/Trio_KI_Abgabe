@@ -1,7 +1,10 @@
 #include "GameplayScene.h"
 
-GameplayScene::GameplayScene(int boardSize)
-        : Scene(), boardSize(boardSize), board(std::make_shared<Board>(boardSize)), solver(board) {}
+GameplayScene::GameplayScene(int boardSize, const GameOptions& options)
+        : Scene(), boardSize(boardSize), board(std::make_shared<Board>(boardSize)),
+          solver(board), gameOptions(options), ai(options.difficulty),
+          hintLevel(0), showAssistantHint(false), aiPlayTimer(0.0f) {
+}
 
 void GameplayScene::initialize() {
     sceneFinished = false;
@@ -9,6 +12,11 @@ void GameplayScene::initialize() {
 
     board->initialize();
     gameState.initialize();
+    ai.initialize();
+    hintLevel = 0;
+    showAssistantHint = false;
+    currentAssistantHint = "";
+    aiPlayTimer = 0.0f;
 
     buttons.clear();
 
@@ -23,21 +31,33 @@ void GameplayScene::initialize() {
     backButton->setSize(120, 40);
     buttons.push_back(backButton);
 
-    // Erstelle Hinweis-Button
+    // Erstelle Hinweis-Button mit erweiterter Funktionalität
     auto hintButtonCallback = [this]() {
         if (!gameState.isRoundWon()) {
-            std::vector<CellPosition> hintCells = solver.getHint(gameState.getTargetNumber());
+            if (gameOptions.assistant == AssistantMode::ON && hintLevel > 0) {
+                // Bei aktivem Assistenten zeige detaillierten Hinweis
+                showAssistantMessage(hintLevel);
+                hintLevel = (hintLevel + 1) % 3; // Rotiere zwischen Hinweisstufen 1-2
+            } else {
+                // Standardverhalten: Markiere erste Zelle einer Lösung
+                std::vector<CellPosition> hintCells = solver.getHint(gameState.getTargetNumber());
 
-            if (!hintCells.empty()) {
-                gameState.clearSelectedCells();
-                gameState.addSelectedCell(hintCells[0]);
-                gameState.incrementHintsUsed();
+                if (!hintCells.empty()) {
+                    gameState.clearSelectedCells();
+                    gameState.addSelectedCell(hintCells[0]);
+                    gameState.incrementHintsUsed();
 
-                // Markiere die Zelle auf dem Spielfeld
-                for (int row = 0; row < board->getSize(); row++) {
-                    for (int col = 0; col < board->getSize(); col++) {
-                        CellPtr cell = board->getCell(row, col);
-                        cell->setSelected(gameState.isCellSelected({row, col}));
+                    // Markiere die Zelle auf dem Spielfeld
+                    for (int row = 0; row < board->getSize(); row++) {
+                        for (int col = 0; col < board->getSize(); col++) {
+                            CellPtr cell = board->getCell(row, col);
+                            cell->setSelected(gameState.isCellSelected({row, col}));
+                        }
+                    }
+
+                    // Aktiviere den Assistenten für den nächsten Hinweis
+                    if (gameOptions.assistant == AssistantMode::ON) {
+                        hintLevel = 1;
                     }
                 }
             }
@@ -64,45 +84,79 @@ void GameplayScene::update(float deltaTime) {
         button->update(deltaTime);
     }
 
+    // Wenn gegen KI gespielt wird, aktualisiere die KI
+    if (gameOptions.mode == GameMode::VERSUS_AI && !gameState.isRoundWon()) {
+        processAIMove(deltaTime);
+    }
+
     // Wenn eine Runde gewonnen wurde und der Timer abgelaufen ist, starte eine neue Runde
     if (gameState.isRoundWon() && gameState.getRoundWonTimer() <= 0.0f && !gameState.isGameWon()) {
+        if (gameOptions.mode == GameMode::VERSUS_AI) {
+            // Lasse die KI aus der Spielerzeit lernen
+            float playerSolveTime = gameState.getTotalTime() / std::max(1, gameState.getRounds());
+            ai.learnFromPlayerMove(playerSolveTime, gameState.getWrongAttempts(), gameState.getHintsUsed());
+        }
+
         gameState.startNewRound();
-        board->resetAllCells();
+
+        // Alle Zellen zurücksetzen
+        for (int row = 0; row < board->getSize(); row++) {
+            for (int col = 0; col < board->getSize(); col++) {
+                CellPtr cell = board->getCell(row, col);
+                if (cell) {
+                    cell->setSelected(false);
+                }
+            }
+        }
+
+        // Assistenten-Hinweise zurücksetzen
+        hintLevel = 0;
+        showAssistantHint = false;
+        currentAssistantHint = "";
+
         generateTargetNumber();
+    }
+
+    // Prozessiere Benutzereingaben
+    if (!gameState.isRoundWon()) {
+        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+            Vector2 mousePos = GetMousePosition();
+
+            // Prüfe Button-Klicks
+            bool buttonClicked = false;
+            for (auto& button : buttons) {
+                if (button->handleMouseClick(mousePos)) {
+                    buttonClicked = true;
+                    break;
+                }
+            }
+
+            // Wenn kein Button geklickt wurde, prüfe Zellen-Klicks
+            if (!buttonClicked) {
+                for (int row = 0; row < board->getSize(); row++) {
+                    for (int col = 0; col < board->getSize(); col++) {
+                        CellPtr cell = board->getCell(row, col);
+                        if (cell && cell->containsPoint(mousePos)) {
+                            processClick(row, col);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    } else {
+        // Im Versus-Modus, wenn der Spieler gewonnen hat, KI informieren
+        if (gameOptions.mode == GameMode::VERSUS_AI && gameState.isRoundWon()) {
+            // Die KI hat verloren, also Lernaktualisierung
+            float playerSolveTime = gameState.getTotalTime() / std::max(1, gameState.getRounds());
+            ai.learnFromPlayerMove(playerSolveTime, gameState.getWrongAttempts(), gameState.getHintsUsed());
+        }
     }
 
     // Prüfe, ob das Spiel gewonnen wurde
     if (gameState.isGameWon()) {
         nextScene = SceneType::GAME_OVER;
         sceneFinished = true;
-    }
-
-    // Prozessiere Benutzereingaben
-    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-        Vector2 mousePos = GetMousePosition();
-
-        // Prüfe Button-Klicks
-        bool buttonClicked = false;
-        for (auto& button : buttons) {
-            if (button->handleMouseClick(mousePos)) {
-                buttonClicked = true;
-                break;
-            }
-        }
-
-        // Wenn kein Button geklickt wurde und die Runde nicht bereits gewonnen ist,
-        // prüfe, ob eine Zelle angeklickt wurde
-        if (!buttonClicked && !gameState.isRoundWon()) {
-            for (int row = 0; row < board->getSize(); row++) {
-                for (int col = 0; col < board->getSize(); col++) {
-                    CellPtr cell = board->getCell(row, col);
-                    if (cell && cell->containsPoint(mousePos)) {
-                        processClick(row, col);
-                        break;
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -112,6 +166,35 @@ void GameplayScene::draw() const {
 
     // Zeichne Spielinformationen
     renderer.drawGameInfo(gameState);
+
+    // Zeichne Assistentenhinweis, wenn aktiv
+    if (showAssistantHint && !currentAssistantHint.empty()) {
+        // Hintergrund für den Hinweis
+        DrawRectangle(50, SCREEN_HEIGHT - 150, SCREEN_WIDTH - 100, 100, ColorAlpha(LIGHTGRAY, 0.9f));
+        DrawRectangleLines(50, SCREEN_HEIGHT - 150, SCREEN_WIDTH - 100, 100, BLACK);
+
+        // Hinweistext
+        DrawText("Assistent:", 70, SCREEN_HEIGHT - 140, 20, BLACK);
+        DrawText(currentAssistantHint.c_str(), 70, SCREEN_HEIGHT - 110, 18, BLACK);
+    }
+
+    // Zeichne Modi-Information
+    if (gameOptions.mode == GameMode::VERSUS_AI) {
+        DrawText("Spiel gegen KI", SCREEN_WIDTH - 120, 80, 15, RED);
+
+        // Zeige Schwierigkeitsstufe
+        const char* difficultyText = "";
+        switch (gameOptions.difficulty) {
+            case AIDifficulty::EASY: difficultyText = "Einfach"; break;
+            case AIDifficulty::MEDIUM: difficultyText = "Mittel"; break;
+            case AIDifficulty::HARD: difficultyText = "Schwer"; break;
+        }
+        DrawText(difficultyText, SCREEN_WIDTH - 120, 100, 15, RED);
+    }
+
+    if (gameOptions.assistant == AssistantMode::ON) {
+        DrawText("Assistent: An", SCREEN_WIDTH - 120, 120, 15, BLUE);
+    }
 
     // Zeichne Buttons
     for (const auto& button : buttons) {
@@ -186,5 +269,48 @@ void GameplayScene::processClick(int row, int col) {
                 }
             }
         }
+    }
+}
+
+// Neue Methoden für KI und Assistent
+void GameplayScene::processAIMove(float deltaTime) {
+    ai.update(deltaTime, gameState);
+
+    // Wenn die KI bereit ist, einen Zug zu machen
+    if (ai.isReadyToMove()) {
+        // KI findet eine Lösung
+        std::vector<CellPosition> solution = ai.findSolution(board, gameState.getTargetNumber());
+
+        if (!solution.empty()) {
+            // KI hat eine Lösung gefunden und gewinnt die Runde
+            for (const auto& cell : solution) {
+                gameState.addSelectedCell(cell);
+                board->getCell(cell.row, cell.col)->setSelected(true);
+            }
+
+            // KI gewinnt diese Runde
+            gameState.winRound();
+
+            // KI lernt aus ihrem eigenen Erfolg
+            float playerAvgTime = gameState.getTotalTime() / std::max(1, gameState.getRounds());
+            ai.learnFromPlayerMove(playerAvgTime, gameState.getWrongAttempts(), gameState.getHintsUsed());
+        }
+    }
+}
+
+void GameplayScene::showAssistantMessage(int level) {
+    if (gameOptions.assistant == AssistantMode::ON) {
+        // Generiere einen passenden Hinweis
+        currentAssistantHint = assistant.generateHint(
+                board,
+                gameState.getTargetNumber(),
+                gameState.getSelectedCells(),
+                level - 1  // Level 0 basiert für die Assistant-Klasse
+        );
+
+        showAssistantHint = true;
+
+        // Inkrementiere Hinweisnutzungen
+        gameState.incrementHintsUsed();
     }
 }

@@ -36,6 +36,7 @@ using ScenePtr = std::shared_ptr<Scene>;
 // Spielzustände
 enum class SceneType {
     MAIN_MENU,
+    OPTIONS,
     GAMEPLAY,
     GAME_OVER
 };
@@ -65,5 +66,27 @@ extern const Color SELECTED_CELL_COLOR;
 extern const Color BUTTON_COLOR;
 extern const Color BUTTON_HOVER_COLOR;
 extern const Color BUTTON_TEXT_COLOR;
+
+enum class GameMode {
+    SOLO,
+    VERSUS_AI
+};
+
+enum class AIDifficulty {
+    EASY,
+    MEDIUM,
+    HARD
+};
+
+enum class AssistantMode {
+    OFF,
+    ON
+};
+
+struct GameOptions {
+    GameMode mode = GameMode::SOLO;
+    AIDifficulty difficulty = AIDifficulty::MEDIUM;
+    AssistantMode assistant = AssistantMode::OFF;
+};
 
 #endif //TRIO_KI_ABGABE_GAMETYPES_H

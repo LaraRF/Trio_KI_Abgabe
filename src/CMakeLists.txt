@@ -36,7 +36,13 @@ add_executable(${PROJECT_NAME} main.cpp
         GameOverScene.h
         TrioGame.cpp
         TrioGame.h
-        GameTypes.h)
+        GameTypes.h
+        NeuralNetworkAI.cpp
+        NeuralNetworkAI.h
+        GameAssistant.cpp
+        GameAssistant.h
+        OptionsScene.cpp
+        OptionsScene.h)
 
 # Add config.h.in file
 configure_file(config.h.in config.h)

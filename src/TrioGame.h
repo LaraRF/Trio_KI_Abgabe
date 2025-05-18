@@ -10,6 +10,7 @@
 #include "MainMenuScene.h"
 #include "GameplayScene.h"
 #include "GameOverScene.h"
+#include "OptionsScene.h"
 
 class TrioGame {
 public:

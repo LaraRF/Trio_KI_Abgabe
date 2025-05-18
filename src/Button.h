@@ -20,10 +20,14 @@ public:
     void setText(const std::string& text);
     std::string getText() const;
 
+    void setSelected(bool isSelected);
+    bool isSelected() const;
+
 private:
     std::string text;
     std::function<void()> callback;
     bool hover;
+    bool selected; // Gibt an, ob der Button ausgewählt ist
 };
 
 
