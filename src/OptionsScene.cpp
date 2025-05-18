@@ -6,8 +6,9 @@
 #include <string>
 
 OptionsScene::OptionsScene(const GameOptions& currentOptions)
-        : Scene(), options(currentOptions) {
+        : Scene(), options(currentOptions), roundsValue(currentOptions.rounds) {
 }
+
 
 void OptionsScene::initialize() {
     sceneFinished = false;
@@ -27,7 +28,23 @@ void OptionsScene::update(float deltaTime) {
         for (auto& button : buttons) {
             button->handleMouseClick(mousePos);
         }
+
+        Rectangle minusRect = { 400 + 200 + 10, 450, 40, 40 };
+        Rectangle plusRect = { minusRect.x + 50, 450, 40, 40 };
+
+        if (CheckCollisionPointRec(mousePos, minusRect)) {
+            // Minus-Button
+            roundsValue = std::max(1, roundsValue - 1);
+            options.rounds = roundsValue;
+        }
+        else if (CheckCollisionPointRec(mousePos, plusRect)) {
+            // Plus-Button
+            roundsValue = std::min(50, roundsValue + 1);
+            options.rounds = roundsValue;
+        }
     }
+
+
 }
 
 void OptionsScene::draw() const {
@@ -73,6 +90,36 @@ void OptionsScene::draw() const {
     DrawText("Zum Speichern und Zurückkehren auf 'Zurück' klicken",
              SCREEN_WIDTH/2 - MeasureText("Zum Speichern und Zurückkehren auf 'Zurück' klicken", 20)/2,
              SCREEN_HEIGHT - 70, 20, DARKGRAY);
+
+    // Kategorie "Rundenanzahl" hinzufügen
+            DrawText("Rundenanzahl:", 100, 450, 30, BLACK);
+
+    // Anzeige der Rundenanzahl
+    DrawText(TextFormat("Aktiv: %d Runden", options.rounds), 100, 490, 20, DARKBLUE);
+
+    // Zeichne einen Bereich für die Rundeneinstellung
+    Rectangle roundsRect = { 400, 450, 200, 40 };
+    DrawRectangleRec(roundsRect, LIGHTGRAY);
+    DrawRectangleLinesEx(roundsRect, 2, BLACK);
+
+    // Anzeige der aktuellen Rundenanzahl
+    char roundsText[10];
+    sprintf(roundsText, "%d", roundsValue);
+    int textWidth = MeasureText(roundsText, 30);
+    DrawText(roundsText, roundsRect.x + (roundsRect.width - textWidth) / 2,
+             roundsRect.y + 5, 30, BLACK);
+
+    // Zeichne Plus- und Minus-Buttons
+    Rectangle minusRect = { roundsRect.x + roundsRect.width + 10, roundsRect.y, 40, 40 };
+    Rectangle plusRect = { minusRect.x + 50, roundsRect.y, 40, 40 };
+
+    DrawRectangleRec(minusRect, LIGHTGRAY);
+    DrawRectangleLinesEx(minusRect, 2, BLACK);
+    DrawText("-", minusRect.x + 15, minusRect.y + 5, 30, BLACK);
+
+    DrawRectangleRec(plusRect, LIGHTGRAY);
+    DrawRectangleLinesEx(plusRect, 2, BLACK);
+    DrawText("+", plusRect.x + 15, plusRect.y + 5, 30, BLACK);
 }
 
 SceneType OptionsScene::getNextScene() const {

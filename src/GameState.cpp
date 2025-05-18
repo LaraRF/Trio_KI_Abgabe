@@ -18,6 +18,8 @@ void GameState::initialize() {
     hintsUsed = 0;
     usedTargetNumbers.clear();
     roundStartTime = std::chrono::steady_clock::now();
+    playerScore = 0;
+    aiScore = 0;
 }
 
 void GameState::update(float deltaTime) {
@@ -129,6 +131,7 @@ void GameState::winRound() {
 
     rounds++;
 
+    // Spiel ist zu Ende, wenn die maximale Rundenanzahl erreicht ist
     if (rounds >= maxRounds) {
         gameWon = true;
     }
@@ -140,4 +143,20 @@ void GameState::addUsedTargetNumber(int number) {
 
 bool GameState::isTargetNumberUsed(int number) const {
     return std::find(usedTargetNumbers.begin(), usedTargetNumbers.end(), number) != usedTargetNumbers.end();
+}
+
+int GameState::getPlayerScore() const {
+    return playerScore;
+}
+
+int GameState::getAIScore() const {
+    return aiScore;
+}
+
+void GameState::incrementPlayerScore() {
+    playerScore++;
+}
+
+void GameState::incrementAIScore() {
+    aiScore++;
 }

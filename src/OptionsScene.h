@@ -29,6 +29,9 @@ private:
     void updateSelectedButtons();
 
     void createButtons();
+
+    int roundsValue;  // Zwischenspeicher für die Rundenanzahl
+    bool editingRounds = false;  // Zeigt an, ob der Benutzer die Rundenanzahl bearbeitet
 };
 
 #endif //RAYLIBSTARTER_OPTIONSSCENE_H

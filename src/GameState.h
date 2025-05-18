@@ -47,10 +47,15 @@ public:
     void addUsedTargetNumber(int number);
     bool isTargetNumberUsed(int number) const;
 
+    int getPlayerScore() const;
+    int getAIScore() const;
+    void incrementPlayerScore();
+    void incrementAIScore();
+
+    int maxRounds;
 private:
     int targetNumber;
     int rounds;
-    int maxRounds;
     std::vector<CellPosition> selectedCells;
     bool gameWon;
     bool roundWon;
@@ -60,6 +65,8 @@ private:
     int wrongAttempts;
     int hintsUsed;
     std::vector<int> usedTargetNumbers;
+    int playerScore;
+    int aiScore;
 };
 
 #endif //RAYLIBSTARTER_GAMESTATE_H

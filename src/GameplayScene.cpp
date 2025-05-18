@@ -20,6 +20,9 @@ void GameplayScene::initialize() {
 
     buttons.clear();
 
+    // Setze die maximale Rundenanzahl aus den Optionen
+    gameState.maxRounds = gameOptions.rounds;
+
     // Erstelle Zurück-Button
     auto backButtonCallback = [this]() {
         nextScene = SceneType::MAIN_MENU;
@@ -200,6 +203,14 @@ void GameplayScene::draw() const {
     for (const auto& button : buttons) {
         button->draw();
     }
+
+    // Zeige den Punktestand im Versus-Modus an
+    if (gameOptions.mode == GameMode::VERSUS_AI) {
+        char scoreText[100];
+        sprintf(scoreText, "Punktestand - Spieler: %d  KI: %d",
+                gameState.getPlayerScore(), gameState.getAIScore());
+        DrawText(scoreText, 10, SCREEN_HEIGHT - 40, 20, BLACK);
+    }
 }
 
 SceneType GameplayScene::getNextScene() const {
@@ -270,6 +281,22 @@ void GameplayScene::processClick(int row, int col) {
             }
         }
     }
+    // Wenn der Spieler eine gültige Lösung findet
+    if (gameState.getSelectedCells().size() == 3) {
+        if (board->isValidSelection(gameState.getSelectedCells()) &&
+            board->checkWinCondition(gameState.getSelectedCells(), gameState.getTargetNumber())) {
+
+            // Punkte für den Spieler erhöhen (nur im Versus-Modus)
+            if (gameOptions.mode == GameMode::VERSUS_AI) {
+                gameState.incrementPlayerScore();
+            }
+
+            // Runde gewonnen
+            gameState.winRound();
+        } else {
+            // Bestehender Code für ungültige Kombination...
+        }
+    }
 }
 
 // Neue Methoden für KI und Assistent
@@ -287,6 +314,9 @@ void GameplayScene::processAIMove(float deltaTime) {
                 gameState.addSelectedCell(cell);
                 board->getCell(cell.row, cell.col)->setSelected(true);
             }
+
+            // Punkte für die KI erhöhen
+            gameState.incrementAIScore();
 
             // KI gewinnt diese Runde
             gameState.winRound();

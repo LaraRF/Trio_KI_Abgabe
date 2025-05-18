@@ -87,6 +87,7 @@ struct GameOptions {
     GameMode mode = GameMode::SOLO;
     AIDifficulty difficulty = AIDifficulty::MEDIUM;
     AssistantMode assistant = AssistantMode::OFF;
+    int rounds = 10;
 };
 
 #endif //TRIO_KI_ABGABE_GAMETYPES_H
